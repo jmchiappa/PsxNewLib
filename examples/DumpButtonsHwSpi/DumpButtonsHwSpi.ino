@@ -49,8 +49,13 @@ typedef const __FlashStringHelper * FlashStr;
 typedef const byte* PGM_BYTES_P;
 #define PSTR_TO_F(s) reinterpret_cast<const __FlashStringHelper *> (s)
 
+#define SPI3_MOSI D17
+#define SPI3_MISO D29
+#define SPI3_SCK  D16
+#define SPI3_SSn  D30
+
 // This can be changed freely but please see above
-const byte PIN_PS2_ATT = 10;
+const byte PIN_PS2_ATT = SPI3_SSn;
 
 const byte PIN_BUTTONPRESS = A0;
 const byte PIN_HAVECONTROLLER = A1;
@@ -176,7 +181,10 @@ const char* const controllerTypeStrings[PSCTRL_MAX + 1] PROGMEM = {
 PsxControllerHwSpi<PIN_PS2_ATT> psx;
 
 boolean haveController = false;
- 
+
+
+SPIClass mySPI(SPI3_MOSI, SPI3_MISO,SPI3_SCK);
+
 void setup () {
 	fastPinMode (PIN_BUTTONPRESS, OUTPUT);
 	fastPinMode (PIN_HAVECONTROLLER, OUTPUT);
@@ -193,7 +201,7 @@ void loop () {
 	fastDigitalWrite (PIN_HAVECONTROLLER, haveController);
 	
 	if (!haveController) {
-		if (psx.begin ()) {
+		if (psx.begin (mySPI)) {
 			Serial.println (F("Controller found!"));
 			delay (300);
 			if (!psx.enterConfigMode ()) {

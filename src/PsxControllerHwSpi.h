@@ -19,12 +19,12 @@ private:
 	DigitalPin<MOSI> cmd;
 	DigitalPin<MISO> dat;
 	DigitalPin<SCK> clk;
-
+	SPIClass *spi_ = &SPI;
 protected:
 	virtual void attention () override {
 		att.low ();
 
-		SPI.beginTransaction (spiSettings);
+		spi_->beginTransaction (spiSettings);
 
 		delayMicroseconds (ATTN_DELAY);
 	}
@@ -32,7 +32,7 @@ protected:
 	virtual void noAttention () override {
 		//~ delayMicroseconds (5);
 		
-		SPI.endTransaction ();
+		spi_->endTransaction ();
 
 		// Make sure CMD and CLK sit high
 		cmd.high ();
@@ -42,22 +42,26 @@ protected:
 	}
 	
 	virtual byte shiftInOut (const byte out) override {
-		return SPI.transfer (out);
+		return spi_->transfer (out);
 	}
 
 public:
-	virtual boolean begin () override {
+	virtual boolean begin () override{
+		begin(SPI);
+	}
+	virtual boolean begin (SPIClass &spi) {
+		*spi_ = spi;
 		att.config (OUTPUT, HIGH);    // HIGH -> Controller not selected
 
 		/* We need to force these at startup, that's why we need to know which
-		 * pins are used for HW SPI. It's a sort of "start condition" the
+		 * pins are used for HW spi_-> It's a sort of "start condition" the
 		 * controller needs.
 		 */
 		cmd.config (OUTPUT, HIGH);
 		clk.config (OUTPUT, HIGH);
 		dat.config (INPUT, HIGH);     // Enable pull-up
 
-		SPI.begin ();
+		spi_->begin ();
 
 		return PsxController::begin ();
 	}
